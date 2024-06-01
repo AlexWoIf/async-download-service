@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-import signal
 from environs import Env
 from pathlib import PurePath
 
@@ -19,7 +18,12 @@ async def archive(request, settings):
     photos_dir = settings.get('photos_dir', PHOTOS_DIR)
     response = web.StreamResponse()
 
-    cwd = PurePath(photos_dir, request.match_info.get("archive_hash"))
+    archive_hash = request.match_info.get('archive_hash')
+    if not archive_hash:
+        raise web.HTTPNotFound(
+            text='The archive hash not provided.'
+        )
+    cwd = PurePath(photos_dir, archive_hash)
     if not os.path.exists(cwd):
         raise web.HTTPNotFound(
             text='The archive does not exist or has been deleted.'
@@ -48,9 +52,10 @@ async def archive(request, settings):
         logging.error(f'Download interrupted by {repr(exc)}')
         raise
     finally:
-        # proc.send_signal(signal.SIGHUP)
-        proc.kill()
-        await proc.communicate()
+        if not proc.returncode:
+            # proc.send_signal(signal.SIGHUP)
+            proc.kill()
+            await proc.communicate()
 
     return response
 
@@ -63,7 +68,7 @@ async def handle_index_page(request):
 
 def get_settings():
     env = Env()
-    env.read_env()
+    env.read_env(override=True)
 
     if env.bool('ENABLE_LOGGING', False):
         logging.basicConfig(
