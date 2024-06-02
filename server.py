@@ -18,11 +18,7 @@ async def archive(request, settings):
     photos_dir = settings.get('photos_dir', PHOTOS_DIR)
     response = web.StreamResponse()
 
-    archive_hash = request.match_info.get('archive_hash')
-    if not archive_hash:
-        raise web.HTTPNotFound(
-            text='The archive hash not provided.'
-        )
+    archive_hash = request.match_info['archive_hash']
     cwd = PurePath(photos_dir, archive_hash)
     if not os.path.exists(cwd):
         raise web.HTTPNotFound(
