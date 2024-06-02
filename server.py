@@ -48,7 +48,7 @@ async def archive(request, settings):
         logging.error(f'Download interrupted by {repr(exc)}')
         raise
     finally:
-        if not proc.returncode:
+        if proc.returncode is not None:
             # proc.send_signal(signal.SIGHUP)
             proc.kill()
             await proc.communicate()
